@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名探偵コナン映画ランキング</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700&display=swap');
+
+  :root {
+    --red: #C8102E;
+    --darker: #050508;
+    --gold: #D4AF37;
+    --silver: #A8A9AD;
+    --bronze: #CD7F32;
+    --text: #e8e4dc;
+    --muted: #6b6b7a;
+    --card-bg: #0f0f18;
+    --border: rgba(200,16,46,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--darker);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(200,16,46,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,16,46,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .header-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--red);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: clamp(22px, 5vw, 38px);
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+  }
+
+  h1 span { color: var(--red); }
+
+  .header-line {
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    margin: 20px auto;
+  }
+
+  .header-sub {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+  .progress-wrap { margin-bottom: 40px; }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .progress-track {
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), #ff4060);
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .question-label {
+    text-align: center;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+
+  .battle-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .movie-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    min-height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .movie-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(200,16,46,0) 0%, rgba(200,16,46,0.08) 100%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .movie-card:hover { border-color: var(--red); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(200,16,46,0.2); }
+  .movie-card:hover::before { opacity: 1; }
+  .movie-card:active { transform: translateY(0); }
+
+  .movie-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--red);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .movie-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: clamp(13px, 2.5vw, 17px);
+    font-weight: 700;
+    line-height: 1.6;
+  }
+
+  .vs-divider {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-align: center;
+    user-select: none;
+  }
+
+  .tie-btn-wrap { text-align: center; }
+
+  .tie-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--muted);
+    padding: 10px 28px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+
+  .tie-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  @keyframes flash-win {
+    0% { background: rgba(200,16,46,0.25); border-color: var(--red); }
+    100% { background: transparent; }
+  }
+
+  .movie-card.flash { animation: flash-win 0.35s ease forwards; }
+
+  .results-section {
+    display: none;
+    animation: fadeIn 0.8s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .results-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .results-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--red);
+    margin-bottom: 10px;
+  }
+
+  .results-h2 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 26px;
+    font-weight: 900;
+  }
+
+  .ranking-list { list-style: none; }
+
+  .ranking-item {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    animation: slideIn 0.4s ease both;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .rank-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 30px;
+    text-align: right;
+    line-height: 1;
+  }
+
+  .rank-medal { font-size: 22px; display: block; text-align: right; }
+  .rank-1 .rank-num { color: var(--gold); }
+  .rank-2 .rank-num { color: var(--silver); }
+  .rank-3 .rank-num { color: var(--bronze); }
+  .rank-other .rank-num { color: var(--muted); font-size: 20px; }
+
+  .rank-title-text {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .rank-movie-no {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  .restart-btn {
+    display: block;
+    margin: 48px auto 0;
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red);
+    padding: 14px 40px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+
+  .restart-btn:hover { background: var(--red); color: white; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <span class="header-label">Detective Conan Movie Ranking</span>
+    <h1>名探偵コナン<br><span>映画ランキング</span></h1>
+    <div class="header-line"></div>
+    <p class="header-sub">２作品を比べて、あなただけのランキングを作ろう</p>
+  </header>
+
+  <div id="sort-section">
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>PROGRESS</span>
+        <span id="progress-text">0 / ?</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <p class="question-label">どちらが好きですか？</p>
+
+    <div class="battle-grid">
+      <div class="movie-card" id="card-a" onclick="choose(0)">
+        <div>
+          <span class="movie-num" id="num-a"></span>
+          <div class="movie-title" id="title-a"></div>
+        </div>
+      </div>
+      <div class="vs-divider">VS</div>
+      <div class="movie-card" id="card-b" onclick="choose(1)">
+        <div>
+          <span class="movie-num" id="num-b"></span>
+          <div class="movie-title" id="title-b"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tie-btn-wrap">
+      <button class="tie-btn" onclick="choose('tie')">どちらも同じくらい好き</button>
+    </div>
+  </div>
+
+  <div class="results-section" id="results-section">
+    <div class="results-header">
+      <div class="results-label">FINAL RANKING</div>
+      <div class="results-h2">あなたのランキング</div>
+    </div>
+    <ol class="ranking-list" id="ranking-list"></ol>
+    <button class="restart-btn" onclick="restart()">もう一度やり直す</button>
+  </div>
+</div>
+
+<script>
+const MOVIES = [
+  { id: 1,  title: "時計じかけの摩天楼" },
+  { id: 2,  title: "14番目の標的" },
+  { id: 3,  title: "世紀末の魔術師" },
+  { id: 4,  title: "瞳の中の暗殺者" },
+  { id: 5,  title: "天国へのカウントダウン" },
+  { id: 6,  title: "ベイカー街の亡霊" },
+  { id: 7,  title: "迷宮の十字路" },
+  { id: 8,  title: "銀翼の奇術師" },
+  { id: 9,  title: "水平線上の陰謀" },
+  { id: 10, title: "探偵たちの鎮魂歌" },
+  { id: 11, title: "紺碧の棺" },
+  { id: 12, title: "戦慄の楽譜" },
+  { id: 13, title: "漆黒の追跡者" },
+  { id: 14, title: "天空の難破船" },
+  { id: 15, title: "沈黙の15分" },
+  { id: 16, title: "11人目のストライカー" },
+  { id: 17, title: "絶海の探偵" },
+  { id: 18, title: "異次元狙撃手" },
+  { id: 19, title: "業火の向日葵" },
+  { id: 20, title: "純黒の悪夢" },
+  { id: 21, title: "から紅の恋歌" },
+  { id: 22, title: "ゼロの執行人" },
+  { id: 23, title: "紺青の拳" },
+  { id: 24, title: "緋色の弾丸" },
+  { id: 25, title: "ハロウィンの花嫁" },
+  { id: 26, title: "黒鉄の魚影" },
+  { id: 27, title: "100万ドルの五稜星" },
+  { id: 28, title: "隻眼の残像" },
+  { id: 29, title: "ハイウェイの堕天使" },
+];
+
+// --- True merge sort driven by user comparisons via async/await ---
+
+let pendingResolve = null;
+let doneSteps = 0;
+let totalSteps = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Worst-case comparisons for merge sort of n elements
+function estimateComparisons(n) {
+  let total = 0, size = 1;
+  while (size < n) {
+    for (let i = 0; i < n; i += size * 2) {
+      const l = Math.min(size, n - i);
+      const r = Math.min(size, n - i - l);
+      if (r > 0) total += l + r - 1;
+    }
+    size *= 2;
+  }
+  return total;
+}
+
+function askUser(a, b) {
+  // Show the two movies and wait for user choice
+  document.getElementById('num-a').textContent = `NO.${String(a.id).padStart(2,'0')}`;
+  document.getElementById('title-a').textContent = a.title;
+  document.getElementById('num-b').textContent = `NO.${String(b.id).padStart(2,'0')}`;
+  document.getElementById('title-b').textContent = b.title;
+
+  return new Promise(resolve => { pendingResolve = resolve; });
+}
+
+function choose(side) {
+  if (!pendingResolve) return;
+  const resolve = pendingResolve;
+  pendingResolve = null;
+
+  if (side === 0 || side === 1) {
+    const card = document.getElementById(side === 0 ? 'card-a' : 'card-b');
+    card.classList.add('flash');
+    setTimeout(() => card.classList.remove('flash'), 350);
+  }
+
+  setTimeout(() => resolve(side), side === 'tie' ? 0 : 180);
+}
+
+function updateProgress() {
+  const pct = totalSteps > 0 ? Math.min(100, Math.round((doneSteps / totalSteps) * 100)) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${doneSteps} / ${totalSteps}`;
+}
+
+async function mergeSort(arr) {
+  if (arr.length <= 1) return arr;
+  const mid = Math.floor(arr.length / 2);
+  const left  = await mergeSort(arr.slice(0, mid));
+  const right = await mergeSort(arr.slice(mid));
+  return await merge(left, right);
+}
+
+async function merge(left, right) {
+  const result = [];
+  let iL = 0, iR = 0;
+
+  while (iL < left.length && iR < right.length) {
+    const choice = await askUser(left[iL], right[iR]);
+    doneSteps++;
+    updateProgress();
+
+    if (choice === 'tie') {
+      // Tie: keep both, left first (arbitrary)
+      result.push(left[iL++], right[iR++]);
+    } else if (choice === 0) {
+      // Left wins → left goes higher in ranking
+      result.push(left[iL++]);
+    } else {
+      // Right wins
+      result.push(right[iR++]);
+    }
+  }
+
+  // Append remaining elements
+  while (iL < left.length)  result.push(left[iL++]);
+  while (iR < right.length) result.push(right[iR++]);
+
+  return result;
+}
+
+async function init() {
+  doneSteps = 0;
+  pendingResolve = null;
+
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('sort-section').style.display = 'block';
+
+  const shuffled = shuffle(MOVIES);
+  totalSteps = estimateComparisons(shuffled.length);
+  updateProgress();
+
+  const sorted = await mergeSort(shuffled);
+  showResults(sorted);
+}
+
+function showResults(sorted) {
+  document.getElementById('sort-section').style.display = 'none';
+  const res = document.getElementById('results-section');
+  res.style.display = 'block';
+
+  const list = document.getElementById('ranking-list');
+  list.innerHTML = '';
+
+  sorted.forEach((m, i) => {
+    const rank = i + 1;
+    const cls = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+
+    const li = document.createElement('li');
+    li.className = `ranking-item ${cls}`;
+    li.style.animationDelay = `${i * 0.035}s`;
+    li.innerHTML = `
+      <div class="rank-num">${medal ? `<span class="rank-medal">${medal}</span>` : rank}</div>
+      <div>
+        <div class="rank-title-text">${m.title}</div>
+        <div class="rank-movie-no">NO.${String(m.id).padStart(2,'0')}</div>
+      </div>
+    `;
+    list.appendChild(li);
+  });
+}
+
+function restart() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  init();
+}
+
+init();
+</script>
+</body>
+</html>
