@@ -491,17 +491,16 @@ function renderMovies() {
     return;
   }
 
-  list.innerHTML = filtered.map((movie, fi) => {
+  list.innerHTML = filtered.map((movie) => {
     const idx = MOVIES.indexOf(movie);
     const memo = ud[movie] || { star:0, note:"", mystery:0, action:0, romance:0, character:0, nostalgia:0 };
     const hasData = memo.star > 0 || memo.note || RADAR_KEYS.some(k => memo[k.key] > 0);
     const isOpen = openCards.has(movie);
     const starsPreview = hasData && memo.star > 0 ? `<span class="movie-stars-preview">${"★".repeat(memo.star)}</span>` : "";
+    const bodyHtml = isOpen ? buildMovieBody(idx) : "";
 
-    const bodyHtml = isOpen ? buildMovieBody(movie, memo) : "";
-
-    return `<div class="movie-card${isOpen?' open':''}" id="card-${idx}">
-      <button class="movie-header" onclick="toggleCard('${escAttr(movie)}')">
+    return `<div class="movie-card${isOpen?" open":""}" id="card-${idx}">
+      <button class="movie-header" data-idx="${idx}">
         <div class="movie-header-left">
           <span class="movie-num">${String(idx+1).padStart(2,"0")}</span>
           <span class="movie-title">${escHtml(movie)}</span>
@@ -514,104 +513,132 @@ function renderMovies() {
       ${bodyHtml}
     </div>`;
   }).join("");
+
+  // Attach header click listeners
+  list.querySelectorAll(".movie-header[data-idx]").forEach(btn => {
+    btn.addEventListener("click", () => toggleCard(Number(btn.dataset.idx)));
+  });
+  attachBodyListeners();
 }
 
-function buildMovieBody(movie, memo) {
+function buildMovieBody(idx) {
+  const movie = MOVIES[idx];
+  const ud = userData();
+  const memo = ud[movie] || { star:0, note:"", mystery:0, action:0, romance:0, character:0, nostalgia:0 };
+
   const sliders = RADAR_KEYS.map(k => `
     <div class="slider-row">
       <span class="slider-label">${k.label}</span>
       <input type="range" class="slider-input" min="0" max="5" step="1" value="${memo[k.key]||0}"
-        oninput="updateDraft('${escAttr(movie)}','${k.key}',this.value)">
-      <span class="slider-val${(memo[k.key]||0)>0?' nonzero':''}" id="sv-${escAttr(movie)}-${k.key}">${memo[k.key]||0}</span>
+        data-idx="${idx}" data-key="${k.key}">
+      <span class="slider-val${(memo[k.key]||0)>0?" nonzero":""}" id="sv-${idx}-${k.key}">${memo[k.key]||0}</span>
     </div>`).join("");
 
   const stars = [1,2,3,4,5].map(s => `
-    <button class="star-btn${s<=(memo.star||0)?' active':''}" id="star-${escAttr(movie)}-${s}"
-      onclick="setStar('${escAttr(movie)}',${s})" onmouseenter="hoverStar('${escAttr(movie)}',${s})" onmouseleave="unhoverStar('${escAttr(movie)}')">★</button>
+    <button class="star-btn${s<=(memo.star||0)?" active":""}" id="star-${idx}-${s}" data-idx="${idx}" data-star="${s}">★</button>
   `).join("");
 
   return `<div class="movie-body">
     <div class="movie-inputs">
       <div class="field-group">
         <div class="field-label">総合評価</div>
-        <div class="stars" id="stars-${escAttr(movie)}">${stars}</div>
+        <div class="stars" id="stars-${idx}">${stars}</div>
       </div>
       <div class="field-group">
         <div class="field-label">感想メモ</div>
         <textarea class="note-input" rows="3" placeholder="感想を書いてね..."
-          oninput="updateDraft('${escAttr(movie)}','note',this.value)">${escHtml(memo.note||"")}</textarea>
+          data-idx="${idx}">${escHtml(memo.note||"")}</textarea>
       </div>
       <div class="field-group">${sliders}</div>
-      <button class="save-btn" onclick="saveMemo('${escAttr(movie)}')">保存する</button>
+      <button class="save-btn" data-idx="${idx}">保存する</button>
     </div>
-    <div class="radar-wrap" id="radar-${escAttr(movie)}">${buildRadar(memo)}</div>
+    <div class="radar-wrap" id="radar-${idx}">${buildRadar(memo)}</div>
   </div>`;
 }
 
-// Draft state (in-memory, per open card)
+// Draft state (in-memory, per open card) - keyed by movie index
 const drafts = {};
 
-function getDraft(movie) {
+function getDraft(idx) {
+  const movie = MOVIES[idx];
   const ud = userData();
-  if (!drafts[movie]) {
+  if (!drafts[idx]) {
     const saved = ud[movie] || { star:0, note:"", mystery:0, action:0, romance:0, character:0, nostalgia:0 };
-    drafts[movie] = { ...saved };
+    drafts[idx] = { ...saved };
   }
-  return drafts[movie];
+  return drafts[idx];
 }
 
-function toggleCard(movie) {
+function toggleCard(idx) {
+  const movie = MOVIES[idx];
   if (openCards.has(movie)) {
     openCards.delete(movie);
-    delete drafts[movie];
+    delete drafts[idx];
   } else {
     openCards.add(movie);
     const ud = userData();
-    drafts[movie] = { ...(ud[movie] || { star:0, note:"", mystery:0, action:0, romance:0, character:0, nostalgia:0 }) };
+    drafts[idx] = { ...(ud[movie] || { star:0, note:"", mystery:0, action:0, romance:0, character:0, nostalgia:0 }) };
   }
   renderMovies();
+  attachBodyListeners();
 }
 
-function updateDraft(movie, key, value) {
-  const d = getDraft(movie);
-  d[key] = (key === "note") ? value : Number(value);
-  // update slider val display
-  if (key !== "note") {
-    const el = document.getElementById(`sv-${movie}-${key}`);
-    if (el) { el.textContent = d[key]; el.className = "slider-val" + (d[key]>0?" nonzero":""); }
-  }
-  // update radar
-  const radarEl = document.getElementById(`radar-${movie}`);
-  if (radarEl) radarEl.innerHTML = buildRadar(d);
+function attachBodyListeners() {
+  // Sliders
+  document.querySelectorAll(".slider-input[data-idx]").forEach(el => {
+    el.addEventListener("input", () => {
+      const idx = Number(el.dataset.idx), key = el.dataset.key;
+      const d = getDraft(idx);
+      d[key] = Number(el.value);
+      const sv = document.getElementById(`sv-${idx}-${key}`);
+      if (sv) { sv.textContent = d[key]; sv.className = "slider-val" + (d[key]>0?" nonzero":""); }
+      const radarEl = document.getElementById(`radar-${idx}`);
+      if (radarEl) radarEl.innerHTML = buildRadar(d);
+    });
+  });
+  // Textarea
+  document.querySelectorAll("textarea.note-input[data-idx]").forEach(el => {
+    el.addEventListener("input", () => {
+      const idx = Number(el.dataset.idx);
+      getDraft(idx).note = el.value;
+    });
+  });
+  // Stars
+  document.querySelectorAll(".star-btn[data-idx]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = Number(btn.dataset.idx), s = Number(btn.dataset.star);
+      const d = getDraft(idx);
+      d.star = (d.star === s) ? 0 : s;
+      updateStarUI(idx, d.star);
+    });
+    btn.addEventListener("mouseenter", () => {
+      const idx = Number(btn.dataset.idx), s = Number(btn.dataset.star);
+      for (let i=1;i<=5;i++) {
+        const el = document.getElementById(`star-${idx}-${i}`);
+        if (el) el.style.color = i<=s ? "#c8a84b" : "#1e2535";
+      }
+    });
+    btn.addEventListener("mouseleave", () => {
+      const idx = Number(btn.dataset.idx);
+      updateStarUI(idx, getDraft(idx).star);
+    });
+  });
+  // Save
+  document.querySelectorAll(".save-btn[data-idx]").forEach(btn => {
+    btn.addEventListener("click", () => saveMemo(Number(btn.dataset.idx)));
+  });
 }
 
-function setStar(movie, s) {
-  const d = getDraft(movie);
-  d.star = (d.star === s) ? 0 : s;
-  updateStarUI(movie, d.star);
-}
-
-function hoverStar(movie, s) {
+function updateStarUI(idx, val) {
   for (let i=1;i<=5;i++) {
-    const el = document.getElementById(`star-${movie}-${i}`);
-    if (el) el.style.color = i<=s ? "#c8a84b" : "#1e2535";
+    const el = document.getElementById(`star-${idx}-${i}`);
+    if (el) el.style.color = i<=val ? "#c8a84b" : "#1e2535";
   }
 }
 
-function unhoverStar(movie) {
-  const d = getDraft(movie);
-  updateStarUI(movie, d.star);
-}
-
-function updateStarUI(movie, val) {
-  for (let i=1;i<=5;i++) {
-    const el = document.getElementById(`star-${movie}-${i}`);
-    if (el) { el.style.color = i<=val ? "#c8a84b" : "#1e2535"; }
-  }
-}
-
-function saveMemo(movie) {
-  const d = getDraft(movie);
+function saveMemo(idx) {
+  const movie = MOVIES[idx];
+  const d = getDraft(idx);
   if (!allData[activeUser]) allData[activeUser] = {};
   allData[activeUser][movie] = { ...d };
   persist();
@@ -619,7 +646,6 @@ function saveMemo(movie) {
   renderStats();
   renderRanking();
   // update header stars preview without full re-render
-  const idx = MOVIES.indexOf(movie);
   const card = document.getElementById(`card-${idx}`);
   if (card) {
     const prev = card.querySelector(".movie-stars-preview");
